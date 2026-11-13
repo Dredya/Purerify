@@ -1,0 +1,7 @@
+Start the HTTPS server (in one terminal):
+cd "D:\ai proj\ios.apps\Purerify\server"
+python -m uvicorn main:app --host 0.0.0.0 --port 8443 --ssl-keyfile key.pem --ssl-certfile cert.pem
+(Or run server/run.bat.)
+Start a public tunnel (in another terminal):
+cloudflared tunnel --url https://localhost:8443 --no-tls-verify --no-autoupdate
+It will print a https://...trycloudflare.com URL.

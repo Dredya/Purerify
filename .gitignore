@@ -1,0 +1,21 @@
+# SwiftPM / xtool build artifacts
+.build/
+.swiftpm/
+.bsp/
+xtool/
+*.ipa
+*.dSYM/
+
+# Python
+server/__pycache__/
+server/storage/
+*.pyc
+*.pyo
+
+# Generated TLS certs/keys (regenerate with server/generate_cert.py)
+server/key.pem
+server/cert.pem
+
+# OS
+.DS_Store
+Thumbs.db

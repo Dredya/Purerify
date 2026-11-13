@@ -1,0 +1,4 @@
+version: 1
+bundleID: com.purerify.app
+infoPath: Purerify-Info.plist
+iconPath: Resources/AppIcon.png

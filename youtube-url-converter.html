@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YouTube URL Converter</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #1a1d24;
+    --accent: #ff3b5c;
+    --accent2: #ff7a5c;
+    --text: #f5f7fb;
+    --muted: #9aa4b2;
+    --border: #2a2f3a;
+    --ok: #3ddc97;
+    --err: #ff5c5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #2a1a22 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: grid; place-items: center; font-weight: 800; font-size: 20px;
+    box-shadow: 0 8px 24px rgba(255,59,92,.35);
+  }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -0.5px; }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+  textarea, input {
+    width: 100%; background: #11141a; border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit;
+    resize: vertical;
+  }
+  textarea { min-height: 110px; }
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  button {
+    border: none; cursor: pointer; border-radius: 10px; padding: 10px 16px;
+    font-size: 14px; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    transition: transform .05s ease, opacity .15s;
+  }
+  button:hover { opacity: .92; }
+  button:active { transform: scale(.98); }
+  button.secondary { background: #2a2f3a; }
+  button.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .results { margin-top: 8px; }
+  .item {
+    background: #11141a; border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .item-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 700; }
+  .badge.ok { background: rgba(61,220,151,.15); color: var(--ok); }
+  .badge.err { background: rgba(255,92,92,.15); color: var(--err); }
+  .vid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; color: var(--accent2); }
+  .fields { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .field { display: flex; align-items: center; gap: 8px; }
+  .field .key { width: 110px; color: var(--muted); font-size: 12px; flex-shrink: 0; }
+  .field .val { flex: 1; font-size: 13px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .field button { padding: 6px 10px; font-size: 12px; }
+  .thumb { margin-top: 10px; max-width: 240px; border-radius: 8px; border: 1px solid var(--border); display: none; }
+  .thumb.show { display: block; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .formats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { background: #232833; border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 11px; color: var(--muted); }
+  footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">YT</div>
+    <div>
+      <h1>YouTube URL Converter</h1>
+      <div class="sub">Normalize watch / youtu.be / shorts / embed / live links into a canonical video URL.</div>
+    </div>
+  </header>
+
+  <div class="card">
+    <label for="input">YouTube URLs (one per line, or comma / space separated)</label>
+    <textarea id="input" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ&#10;https://youtu.be/dQw4w9WgXcQ&#10;https://youtube.com/shorts/abc123..."></textarea>
+    <div class="row">
+      <button id="convert">Convert</button>
+      <button class="secondary" id="clear">Clear</button>
+      <button class="ghost" id="paste">Paste from clipboard</button>
+    </div>
+    <div class="note">All processing happens in your browser. Nothing is uploaded.</div>
+  </div>
+
+  <div class="card">
+    <label>Supported input formats</label>
+    <div class="formats">
+      <span class="chip">youtube.com/watch?v=ID</span>
+      <span class="chip">youtu.be/ID</span>
+      <span class="chip">youtube.com/shorts/ID</span>
+      <span class="chip">youtube.com/embed/ID</span>
+      <span class="chip">youtube.com/live/ID</span>
+      <span class="chip">youtube.com/v/ID</span>
+      <span class="chip">m.youtube.com/watch?v=ID</span>
+      <span class="chip">youtube-nocookie.com/embed/ID</span>
+      <span class="chip">+ query params (t=, si=, feature=)</span>
+    </div>
+  </div>
+
+  <div id="results" class="results"></div>
+
+  <footer>Client-side only · No data leaves your device.</footer>
+</div>
+
+<script>
+(function () {
+  const ID_RE = /^[A-Za-z0-9_-]{11}$/;
+
+  function extractVideoID(raw) {
+    const input = (raw || '').trim();
+    if (!input) return null;
+    // Bare 11-char ID
+    if (ID_RE.test(input)) return input;
+
+    let url;
+    try { url = new URL(input); } catch (e) { return null; }
+
+    const host = (url.hostname || '').toLowerCase().replace(/^www\./, '');
+    const allowed = new Set(['youtube.com','m.youtube.com','music.youtube.com','youtu.be','youtube-nocookie.com']);
+    if (!allowed.has(host)) return null;
+
+    let candidate = null;
+    if (host === 'youtu.be') {
+      candidate = url.pathname.split('/').filter(Boolean)[0];
+    } else if (url.pathname === '/watch') {
+      candidate = url.searchParams.get('v');
+    } else {
+      const parts = url.pathname.split('/').filter(Boolean);
+      const markers = new Set(['shorts','live','embed','v','e']);
+      const idx = parts.findIndex(p => markers.has(p));
+      if (idx !== -1 && parts[idx + 1]) candidate = parts[idx + 1];
+    }
+
+    if (!candidate) return null;
+    // strip trailing junk
+    candidate = candidate.split('?')[0].split('#')[0];
+    return ID_RE.test(candidate) ? candidate : null;
+  }
+
+  function parseAll(text) {
+    // split on newlines, commas, spaces, tabs
+    return text.split(/[\s,]+/).map(s => s.trim()).filter(Boolean);
+  }
+
+  function canonical(id) { return 'https://www.youtube.com/watch?v=' + id; }
+  function embed(id) { return 'https://www.youtube.com/embed/' + id; }
+  function nocookie(id) { return 'https://www.youtube-nocookie.com/embed/' + id; }
+  function shorts(id) { return 'https://www.youtube.com/shorts/' + id; }
+  function youtuBe(id) { return 'https://youtu.be/' + id; }
+  function thumb(id, q) { return 'https://i.ytimg.com/vi/' + id + '/' + (q || 'hqdefault') + '.jpg'; }
+
+  function copy(text, btn) {
+    const done = () => { const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = old, 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done));
+    } else fallback(text, done);
+  }
+  function fallback(text, done) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done();
+  }
+
+  function renderResults(ids, invalid) {
+    const root = document.getElementById('results');
+    root.innerHTML = '';
+    if (ids.length === 0 && invalid.length === 0) return;
+
+    if (ids.length) {
+      const card = document.createElement('div'); card.className = 'card';
+      card.innerHTML = '<label>Converted (' + ids.length + ')</label>';
+      ids.forEach(id => {
+        const item = document.createElement('div'); item.className = 'item';
+        item.innerHTML = `
+          <div class="item-head">
+            <span class="badge ok">VALID</span>
+            <span class="vid">${id}</span>
+          </div>
+          <div class="fields">
+            ${field('Watch', canonical(id))}
+            ${field('youtu.be', youtuBe(id))}
+            ${field('Embed', embed(id))}
+            ${field('Shorts', shorts(id))}
+            ${field('No-cookie', nocookie(id))}
+            ${field('Thumbnail', thumb(id, 'maxresdefault'))}
+          </div>
+          <img class="thumb show" src="${thumb(id,'hqdefault')}" alt="thumbnail" loading="lazy" onerror="this.style.display='none'" />
+        `;
+        card.appendChild(item);
+      });
+      root.appendChild(card);
+    }
+
+    if (invalid.length) {
+      const card = document.createElement('div'); card.className = 'card';
+      card.innerHTML = '<label>Could not parse (' + invalid.length + ')</label>';
+      invalid.forEach(v => {
+        const item = document.createElement('div'); item.className = 'item';
+        item.innerHTML = `<div class="item-head"><span class="badge err">INVALID</span><span class="vid">${escapeHtml(v)}</span></div>`;
+        card.appendChild(item);
+      });
+      root.appendChild(card);
+    }
+  }
+
+  function field(key, val) {
+    return `<div class="field">
+      <span class="key">${key}</span>
+      <span class="val">${escapeHtml(val)}</span>
+      <button data-copy="${escapeAttr(val)}">Copy</button>
+    </div>`;
+  }
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escapeAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+
+  function run() {
+    const text = document.getElementById('input').value;
+    const tokens = parseAll(text);
+    const ids = [];
+    const invalid = [];
+    const seen = new Set();
+    tokens.forEach(t => {
+      const id = extractVideoID(t);
+      if (id) { if (!seen.has(id)) { seen.add(id); ids.push(id); } }
+      else invalid.push(t);
+    });
+    renderResults(ids, invalid);
+  }
+
+  document.getElementById('convert').addEventListener('click', run);
+  document.getElementById('input').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) run(); });
+  document.getElementById('clear').addEventListener('click', () => { document.getElementById('input').value = ''; document.getElementById('results').innerHTML = ''; });
+  document.getElementById('paste').addEventListener('click', async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      document.getElementById('input').value = t;
+      run();
+    } catch (e) { alert('Clipboard access denied. Paste manually.'); }
+  });
+
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-copy]');
+    if (btn) copy(btn.getAttribute('data-copy'), btn);
+  });
+})();
+</script>
+</body>
+</html>
